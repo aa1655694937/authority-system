@@ -1,5 +1,6 @@
 package com.manong.config.security;
 
+import com.manong.config.security.fiter.CheckTokenFilter;
 import com.manong.config.security.handler.AnonymousAuthenticationHandler;
 import com.manong.config.security.handler.CustomerAccessDeniedHandler;
 import com.manong.config.security.handler.LoginFailureHandler;
@@ -8,13 +9,16 @@ import com.manong.config.security.service.CustomerUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.annotation.Resource;
 
@@ -23,17 +27,19 @@ import javax.annotation.Resource;
 @EnableWebSecurity
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Autowired
+    @Resource
     private LoginSuccessHandler loginSuccessHandler;
 
-    @Autowired
+    @Resource
     private LoginFailureHandler loginFailureHandler;
-    @Autowired
+    @Resource
     private AnonymousAuthenticationHandler anonymousAuthenticationHandler;
-    @Autowired
+    @Resource
     private CustomerAccessDeniedHandler customerAccessDeniedHandler;
-    @Autowired
+    @Resource
      private CustomerUserDetailsService customerUserDetailsService;
+    @Resource
+    private CheckTokenFilter checkTokenFilter;
 
     /**
      * 注入加密类
@@ -51,6 +57,9 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        //登录前进行过滤
+        http.addFilterBefore(checkTokenFilter, UsernamePasswordAuthenticationFilter.class);
+
         //登录过程处理
         http.formLogin()        //表单登录
                 .loginProcessingUrl("/api/user/login")//登录请求yrl地址自定义

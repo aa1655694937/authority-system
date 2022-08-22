@@ -1,6 +1,9 @@
 package com.manong.controller;
 
 import com.manong.config.redis.RedisService;
+import com.manong.entity.Permission;
+import com.manong.entity.User;
+import com.manong.entity.UserInfo;
 import com.manong.utils.JwtUtils;
 import com.manong.utils.Result;
 import com.manong.vo.TokenVo;
@@ -9,12 +12,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.util.ObjectUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/sysUser")
@@ -40,7 +46,7 @@ public class SysUserController {
             token = request.getParameter("token");
 
         }
-        //从spring Sectiy 上下文获取拥挤西欧毛线哦
+        //从spring Sectiy 上下文获取用户信息
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         //获取用户身份信息
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -68,4 +74,29 @@ public class SysUserController {
         return  Result.ok(tokenVo).message("token刷新成功");
 
     }
+
+    /**
+     * 查询用户信息
+     * @return
+     */
+    @GetMapping("/getInfo")
+    public Result getInfo(){
+        //从spring Sectiy 上下文获取用户信息
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null){
+            return Result.error().message("用户信息查询失败");
+        }
+        //获取用户信息
+       User user = (User) authentication.getPrincipal();
+        //获取该用户拥有的权限信息
+        List<Permission> permissionList = user.getPermissionList();
+        //或缺权限编码
+        Object[] roles = permissionList.stream().filter(Objects::nonNull).map(Permission::getCode).toArray();
+
+        //创建用户信息
+        UserInfo userInfo = new UserInfo(user.getId(),user.getNickName(),user.getAvatar(),null,roles);
+        //返回数据
+        return Result.ok(userInfo).message("用户信息查询成功");
+    }
+
 }
